@@ -1,0 +1,1 @@
+Minimalistic yet powerful PostgreSQL client to simply manage and query databases

@@ -1,6 +1,7 @@
 import psycopg2
 import tkinter as tk
 from tkinter import messagebox, scrolledtext
+from tkinter import ttk  # Import ttk for Treeview
 
 # Declare global variables for credentials
 global_host = None
@@ -93,9 +94,13 @@ def open_query_editor(db_name):
     query_text = scrolledtext.ScrolledText(query_window, width=80, height=15)
     query_text.pack(padx=10, pady=10)
 
+    # Table (Treeview) for displaying query results
+    result_table = ttk.Treeview(query_window, columns=(), show='headings')
+    result_table.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
     # Function to execute the query
     def execute_query():
-        query = query_text.get("1.0", tk.END)
+        query = query_text.get("1.0", tk.END).strip()
         try:
             # Connect to the selected database
             connection = psycopg2.connect(
@@ -106,11 +111,20 @@ def open_query_editor(db_name):
 
             # Fetch and display results
             results = cursor.fetchall()
+            columns = [desc[0] for desc in cursor.description]  # Get column names
 
-            # Display results in the result box
-            result_box.delete("1.0", tk.END)
+            # Clear existing data in the Treeview table
+            result_table.delete(*result_table.get_children())
+            result_table['columns'] = columns
+
+            # Update headings for the Treeview table
+            for col in columns:
+                result_table.heading(col, text=col)
+                result_table.column(col, width=100)
+
+            # Insert results into the Treeview table
             for row in results:
-                result_box.insert(tk.END, str(row) + "\n")
+                result_table.insert("", tk.END, values=row)
 
             cursor.close()
             connection.close()
@@ -120,10 +134,6 @@ def open_query_editor(db_name):
     # Button to execute the query
     execute_button = tk.Button(query_window, text="Execute", command=execute_query)
     execute_button.pack(pady=5)
-
-    # Text area to display query results
-    result_box = scrolledtext.ScrolledText(query_window, width=80, height=10)
-    result_box.pack(padx=10, pady=10)
 
 # Function to handle right-click on the listbox
 def on_right_click(event):
